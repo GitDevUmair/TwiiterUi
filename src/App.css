@@ -1,5 +1,8 @@
-.container {
+.customcontainer {
+  width: 100%;
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 .top {
   margin-bottom: 0.3rem;
@@ -9,25 +12,28 @@
 * {
   margin: 0px;
   padding: 0px;
-  text-decoration: none;
 }
 
 .sidebar {
   background-color: #000;
   color: #fff;
   height: 100vh;
-  width: 12rem;
+  width: 20%;
   padding: 10px 20px;
+  box-sizing: border-box;
   overflow-x: hidden;
   position: fixed;
 }
-.link {
+.customlink {
+  text-decoration: none;
   width: 100%;
   display: flex;
   gap: 20px;
   color: #fff;
   border-radius: 4px;
   padding: 10px 10px;
+  align-items: center;
+  margin: 10px 0px;
 }
 .top h1 {
   font-size: 28px;
@@ -40,10 +46,10 @@
   font-size: 16px;
 }
 .icon {
-  margin-top: 3px;
+  margin-bottom: 5px;
   font-size: 16px;
 }
-.link:hover {
+.customlink:hover {
   background-color: lightskyblue;
   color: #000;
   transition: all 0.5s;
@@ -52,4 +58,7 @@
   background-color: lightskyblue;
   color: #000;
   transition: all 0.5s;
+}
+.mymain {
+  width: 60%;
 }

@@ -1,15 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { MdFeed, MdNotifications, MdOutlinePeopleAlt } from "react-icons/md";
 import { AiFillHome } from "react-icons/ai";
-import { CgMoreO } from "react-icons/cg";
+import { CgMoreO, CgProfile } from "react-icons/cg";
 import { FaUserAlt, FaRegChartBar, FaShoppingBag } from "react-icons/fa";
-import { NavLink } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
+import Rightbar from "./Rightbar";
 const Sidebar = ({ children }) => {
-  const [show, setShow] = useState(true);
-  const toggleShow = () => setShow(!show);
+  let navigate = useNavigate();
+  useEffect(() => {
+    if (!localStorage.getItem("auth-token")) {
+      navigate("/");
+    }
+  }, []);
+  const handleLogout = () => {
+    localStorage.removeItem("auth-token");
+    navigate("/");
+  };
   const menuItem = [
     {
-      path: "/",
+      path: "/dashboard",
       name: "Home",
       icon: <AiFillHome />,
     },
@@ -44,13 +53,13 @@ const Sidebar = ({ children }) => {
       icon: <CgMoreO />,
     },
     {
-      path: "/community",
-      name: "Community",
-      icon: <MdOutlinePeopleAlt />,
+      path: "/profile",
+      name: "Profile",
+      icon: <CgProfile />,
     },
   ];
   return (
-    <div className="container">
+    <div className="customcontainer">
       <div className="sidebar">
         <div className="top">
           <img
@@ -66,43 +75,36 @@ const Sidebar = ({ children }) => {
             <NavLink
               key={index}
               to={item.path}
-              className="link"
-              activeClassName="active"
+              className="customlink"
+              // activeClassName="active"
               style={{ paddingLeft: "20px", width: "80%" }}
             >
-              <div className="icon" style={{ color: "white" }}>
-                {item.icon}
-              </div>
-              <div
-                className="link_text"
-                style={{ display: show ? "block" : "none" }}
-              >
-                {item.name}
-              </div>
+              <div className="icon">{item.icon}</div>
+              <div className="link_text">{item.name}</div>
             </NavLink>
           );
         })}
         <button
           style={{
-            backgroundColor: "rgb(29, 155, 240)",
-            color: "white",
+            backgroundColor: "lightskyblue",
+            color: "black",
             border: "transparent",
-            padding: "15px 25px",
-            borderRadius: "20px",
+            padding: "10px",
+            borderRadius: "8px",
             fontWeight: "bold",
-            width : '11rem', 
-            marginTop :'1rem',
-            marginLeft : '10px',
-            fontSize : '16px'
-
+            width: "11.3rem",
+            marginTop: "2rem",
+            fontSize: "16px",
           }}
+          onClick={handleLogout}
         >
-          Post
+          Logout
         </button>
       </div>
-      <main className="mymain" style={{ marginLeft: "15rem" }}>
+      <div className="mymain" style={{ marginLeft: "16rem" }}>
         {children}
-      </main>
+      </div>
+      <Rightbar />
     </div>
   );
 };

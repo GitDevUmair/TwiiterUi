@@ -1,29 +1,163 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BiUser, BiPoll } from "react-icons/bi";
 import { GiEarthAmerica } from "react-icons/gi";
-import {
-  AiOutlineHeart,
-  AiOutlineSchedule,
-  AiOutlineFileGif,
-} from "react-icons/ai";
-import { FaRegComment, FaRetweet, FaShare } from "react-icons/fa";
-import { LuView } from "react-icons/lu";
+import { AiOutlineSchedule, AiOutlineFileGif } from "react-icons/ai";
 import { MdOutlinePermMedia } from "react-icons/md";
 import { CiLocationOn } from "react-icons/ci";
 import { BsEmojiSmile } from "react-icons/bs";
-
+import { toast } from "react-toastify";
 import "./Newsfeed.css";
+import Newsfeeditem from "./Newsfeeditem";
 const Newsfeed = () => {
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [tweettext, setTweettext] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [select, setSelect] = useState("first");
+  const [loadingimage, setLoading] = useState(false);
+
+  const [feed, setFeed] = useState([]);
+  const isDisabled = tweettext === "" || imageUrl === "";
+
+  //work to fetch all tweets fo =r newsfeed
+  useEffect(() => {
+    let output = getToken();
+    getNewsfeed(output);
+  }, []);
+  const getNewsfeed = async (output) => {
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/newsfeed/getnewsfeed",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": output,
+          },
+        }
+      );
+      const result = await response.json();
+      setFeed(result.tweets);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+  const getUserDetails = async (id) => {
+    try {
+      const data = {};
+      data.id = id;
+      const response = await fetch(
+        "http://localhost:5000/api/auth/getposterdetail",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+  //work to post a tweet
+  useEffect(() => {
+    handleImageUpload();
+  }, [selectedImage]);
+  const handleImageUpload = async () => {
+    if (selectedImage) {
+      const formData = new FormData();
+      formData.append("file", selectedImage);
+      formData.append("upload_preset", "devumairpreset"); // Replace with your Cloudinary preset
+      try {
+        setLoading(true);
+        const response = await fetch(
+          "https://api.cloudinary.com/v1_1/dmf3rzsxc/image/upload",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const data = await response.json();
+        setImageUrl(data.secure_url);
+      } catch (error) {
+        console.error("Error uploading image to Cloudinary:", error);
+      } finally {
+        setLoading(false); // Set uploadingImage back to false after upload completes
+      }
+    }
+  };
+  const handleImageChange = (event) => {
+    const selectedFile = event.target.files[0];
+    setSelectedImage(selectedFile); // Update the state with the File object
+  };
+  const handleChange = (e) => {
+    setTweettext(e.target.value);
+  };
+  const getToken = () => {
+    let token = localStorage.getItem("auth-token");
+    return token;
+  };
+  const submitTweet = async () => {
+    let token = getToken();
+    let data = {
+      text: tweettext,
+      image: imageUrl,
+    };
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/tweets/addtweet",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": token,
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      const result = await response.json();
+      toast.success("Tweet Posted!", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+      setImageUrl("");
+      setTweettext("");
+      getNewsfeed(token);
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Some Error Occured!", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+    }
+  };
   return (
     <div className="space">
-      <h3>Home</h3>
+      <h3 style={{ marginTop: "10px" }}>Home</h3>
       <div className="main">
         <li
           style={{
             fontWeight: select === "first" ? "bold" : "",
             borderBottom:
               select === "first" ? "3px solid rgb(29, 155, 240)" : "",
+            cursor: "pointer",
           }}
           onClick={() => {
             setSelect("first");
@@ -36,6 +170,7 @@ const Newsfeed = () => {
             fontWeight: select === "second" ? "bold" : "",
             borderBottom:
               select === "second" ? "3px solid rgb(29, 155, 240)" : "",
+            cursor: "pointer",
           }}
           onClick={() => {
             setSelect("second");
@@ -45,13 +180,39 @@ const Newsfeed = () => {
         </li>
       </div>
       <div className="options">
-        <div className="user">
-          <BiUser />
-        </div>
-        <div>
-          <p style={{ fontSize: "18px", marginTop: "12px" }}>
-            What is happening?!
-          </p>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <div className="user">
+            <BiUser />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <input
+              placeholder="What is happening?!"
+              id="text"
+              name="text"
+              size={70}
+              style={{
+                border: "none",
+                outline: "none",
+                fontSize: "18px",
+                marginTop: "20px",
+              }}
+              value={tweettext}
+              onChange={handleChange}
+            />
+            {selectedImage && imageUrl && (
+              <img
+                src={URL.createObjectURL(selectedImage)}
+                alt="Selected"
+                height={300}
+                width={400}
+              />
+            )}
+            {loadingimage && (
+              <div className="spinner-border m-5" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div
@@ -63,12 +224,18 @@ const Newsfeed = () => {
           alignItems: "center",
         }}
       >
-        <GiEarthAmerica style={{ color: " rgb(29, 155, 240)" }} />
+        <GiEarthAmerica
+          style={{
+            color: " rgb(29, 155, 240)",
+            marginBottom: "1rem",
+            marginRight: "5px",
+          }}
+        />
         <p
           style={{
             fontSize: "15px",
             fontWeight: "bold",
-            color: " rgb(29, 155, 240)",
+            color: "rgb(29, 155, 240)",
           }}
         >
           Every one can reply
@@ -85,192 +252,67 @@ const Newsfeed = () => {
           borderBottom: "1px solid lightgrey",
         }}
       >
-        <MdOutlinePermMedia style={{ color: "rgb(29, 155, 240)" }} />
-        <AiOutlineFileGif style={{ color: "rgb(29, 155, 240)" }} />
-        <BiPoll style={{ color: "rgb(29, 155, 240)" }} />
-        <BsEmojiSmile style={{ color: "rgb(29, 155, 240)" }} />
-        <AiOutlineSchedule style={{ color: "rgb(29, 155, 240)" }} />
-        <CiLocationOn style={{ color: "rgb(29, 155, 240)" }} />
+        <label htmlFor="media" style={{ cursor: "pointer" }}>
+          {" "}
+          <MdOutlinePermMedia style={{ color: "rgb(29, 155, 240)" }} />
+        </label>
+        <input
+          id="media"
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleImageChange}
+        />
+        <AiOutlineFileGif
+          style={{ color: "rgb(29, 155, 240)", marginTop: "0.4rem" }}
+        />
+        <BiPoll style={{ color: "rgb(29, 155, 240)", marginTop: "0.4rem" }} />
+        <BsEmojiSmile
+          style={{ color: "rgb(29, 155, 240)", marginTop: "0.4rem" }}
+        />
+        <AiOutlineSchedule
+          style={{ color: "rgb(29, 155, 240)", marginTop: "0.4rem" }}
+        />
+        <CiLocationOn
+          style={{ color: "rgb(29, 155, 240)", marginTop: "0.4rem" }}
+        />
         <button
           style={{
-            backgroundColor: "rgb(116 189 239)",
+            backgroundColor: isDisabled ? "lightgray" : "rgb(29, 155, 240)",
             color: "white",
             border: "transparent",
             padding: "8px 16px",
             borderRadius: "15px",
-            marginLeft : '20rem',
-            fontWeight : 'bold',
+            marginLeft: "20rem",
+            fontWeight: "bold",
           }}
-          disabled={true}
+          disabled={isDisabled}
+          onClick={submitTweet}
         >
           Post
         </button>
       </div>
       <div className="alltweets" style={{ marginTop: "2rem" }}>
-        <div
-          className="tweetdiv"
-          style={{
-            border: "1px solid lightgrey",
-            padding: "15px 5px",
-            width: "100%",
-            display: "flex",
-            gap: "20px",
-          }}
-        >
-          <div>
-            <img
-              height={45}
-              width={45}
-              src="https://www.icccricketschedule.com/wp-content/uploads/2023/04/babar.jpg"
-              alt=""
-              style={{ borderRadius: "25px" }}
-            />
-          </div>
-          <div
-            className="content"
-            style={{ display: "flex", flexDirection: "column" }}
-          >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <h4>Name</h4>
-              <img
-                src="https://media-cldnry.s-nbcnews.com/image/upload/rockcms/2021-05/210520-twitter-verified-cs-70cdee.jpg"
-                alt=""
-                height={20}
-                width={40}
+        {feed.length >= 1 ? (
+          feed.map((feeditem, index) => {
+            const { text, image, createdby, _id } = feeditem;
+            const userPromise = getUserDetails(createdby);
+
+            return (
+              <Newsfeeditem
+                text={text}
+                image={image}
+                key={index}
+                id={_id}
+                userPromise={userPromise}
               />
-              <p>@username</p>
-            </div>
-            <div className="para">
-              <p>Japanese restaurants in China fear ruin</p>
-              <p style={{ color: " rgb(29, 155, 240)", marginTop: "4px" }}>
-                #whatever
-              </p>
-            </div>
-            <div className="mainimg" style={{ marginTop: "25px" }}>
-              <img
-                src="https://imageio.forbes.com/specials-images/imageserve/5d35eacaf1176b0008974b54/0x0.jpg?format=jpg&crop=4560,2565,x790,y784,safe&width=1200"
-                alt=""
-                height={200}
-                width={400}
-                style={{ borderRadius: "13px" }}
-              />
-            </div>
-            <div
-              className="reactions"
-              style={{ marginTop: "12px", display: "flex", gap: "3.5rem" }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "7px" }}
-              >
-                <FaRegComment />
-                <span style={{ fontSize: "12px" }}>5</span>
-              </div>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "7px" }}
-              >
-                <FaRetweet />
-                <span style={{ fontSize: "12px" }}>30</span>
-              </div>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "7px" }}
-              >
-                <AiOutlineHeart />
-                <span style={{ fontSize: "12px" }}>180</span>
-              </div>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "7px" }}
-              >
-                <LuView />
-                <span style={{ fontSize: "12px" }}>14.8k</span>
-              </div>
-              <div>
-                <FaShare />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div
-          className="tweetdiv"
-          style={{
-            border: "1px solid lightgrey",
-            padding: "15px 5px",
-            width: "100%",
-            display: "flex",
-            gap: "20px",
-          }}
-        >
-          <div>
-            <img
-              height={45}
-              width={45}
-              src="https://www.icccricketschedule.com/wp-content/uploads/2023/04/babar.jpg"
-              alt=""
-              style={{ borderRadius: "25px" }}
-            />
-          </div>
-          <div
-            className="content"
-            style={{ display: "flex", flexDirection: "column" }}
-          >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <h4>Name</h4>
-              <img
-                src="https://media-cldnry.s-nbcnews.com/image/upload/rockcms/2021-05/210520-twitter-verified-cs-70cdee.jpg"
-                alt=""
-                height={20}
-                width={40}
-              />
-              <p>@username</p>
-            </div>
-            <div className="para">
-              <p>Japanese restaurants in China fear ruin</p>
-              <p style={{ color: " rgb(29, 155, 240)", marginTop: "4px" }}>
-                #whatever
-              </p>
-            </div>
-            <div className="mainimg" style={{ marginTop: "25px" }}>
-              <img
-                src="https://imageio.forbes.com/specials-images/imageserve/5d35eacaf1176b0008974b54/0x0.jpg?format=jpg&crop=4560,2565,x790,y784,safe&width=1200"
-                alt=""
-                height={200}
-                width={400}
-                style={{ borderRadius: "13px" }}
-              />
-            </div>
-            <div
-              className="reactions"
-              style={{ marginTop: "12px", display: "flex", gap: "3.5rem" }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "7px" }}
-              >
-                <FaRegComment />
-                <span style={{ fontSize: "12px" }}>5</span>
-              </div>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "7px" }}
-              >
-                <FaRetweet />
-                <span style={{ fontSize: "12px" }}>30</span>
-              </div>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "7px" }}
-              >
-                <AiOutlineHeart />
-                <span style={{ fontSize: "12px" }}>180</span>
-              </div>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "7px" }}
-              >
-                <LuView />
-                <span style={{ fontSize: "12px" }}>14.8k</span>
-              </div>
-              <div>
-                <FaShare />
-              </div>
-            </div>
-          </div>
-        </div>
+            );
+          })
+        ) : (
+          <p style={{ fontWeight: "bold", textAlign: "center" }}>
+            Nothing to show in the feed right now!
+          </p>
+        )}
       </div>
     </div>
   );

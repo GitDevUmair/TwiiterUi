@@ -1,27 +1,32 @@
-.space{
-    padding: 20px 20px;
+.space {
+  padding: 20px 20px;
 }
-.main{
-    display: flex;
-    margin-top: 20px;
-    padding: 0 8rem;
-    gap: 17rem;
-    border-bottom: solid 1px lightgray;
-    width: 100%;
+.main {
+  display: flex;
+  margin-top: 20px;
+  padding: 0 8rem;
+  gap: 17rem;
+  border-bottom: solid 1px lightgray;
+  width: 100%;
 }
-.main li{
-    list-style: none;
-    padding: 10px 0px;
+.main li {
+  list-style: none;
+  padding: 10px 0px;
 }
-.user{
-    margin-top: 15px;
-    padding: 7px 9px;
-    background-color: lightgrey;
-    border-radius: 25px;
+.user {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px;
+  width: 40px;
+  height: 40px;
+  background-color: lightgrey;
+  border-radius: 40px;
 }
-.options{
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-left: 20px;
+.options {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: 20px;
 }
